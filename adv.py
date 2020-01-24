@@ -32,21 +32,20 @@ traversal_path = []
 class AdventureGraph:
     def __init__(self, size=0):
         self.rooms = {}
+        self.exits = {}
         self.size = size
 
 # instantiate graph and queue
 adv_graph = AdventureGraph()
 num_rooms = len(world.rooms)
 path = [None]
-# used to hold exits yet to be explored
-room_exits = {}
 # dirs used to turn around
 reverse = { 'n': 's', 's': 'n', 'e': 'w', 'w': 'e' }
 
 # add starting room to graph
 adv_graph.rooms[player.current_room.id] = player.current_room.get_exits()
 # add exits
-room_exits[player.current_room.id] = player.current_room.get_exits()
+adv_graph.exits[player.current_room.id] = player.current_room.get_exits()
 
 # while all rooms have not been loaded into graph
 while len(adv_graph.rooms) < num_rooms:
@@ -54,19 +53,19 @@ while len(adv_graph.rooms) < num_rooms:
         # add room
         adv_graph.rooms[player.current_room.id] = player.current_room.get_exits()
         # add exits
-        room_exits[player.current_room.id] = player.current_room.get_exits()
+        adv_graph.exits[player.current_room.id] = player.current_room.get_exits()
         # remove last exit explored from room
         last_dir = path[-1]
-        room_exits[player.current_room.id].remove(last_dir)
+        adv_graph.exits[player.current_room.id].remove(last_dir)
 
     # no exits in room -> turn around until find a room with exits
-    while len(room_exits[player.current_room.id]) < 1: 
+    while len(adv_graph.exits[player.current_room.id]) < 1: 
         last_dir = path.pop()
         traversal_path.append(last_dir)
         player.travel(last_dir)
 
     # grab available exit
-    exit_dir = room_exits[player.current_room.id].pop(0)
+    exit_dir = adv_graph.exits[player.current_room.id].pop(0)
     # travel
     traversal_path.append(exit_dir)
     path.append(reverse[exit_dir])
