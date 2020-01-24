@@ -85,11 +85,13 @@ class AdventureGraph:
             path = q.dequeue()
 
             last = path[-1]
+            print("last: ", last)
 
             if last not in visited:
                 for neighbor in self.rooms[last]:
                     if self.rooms[last][neighbor] == '?':
                         # continue in that direction
+                        print("path: ", path[1:])
                         return path[1:]
                     elif self.rooms[last][neighbor] == previous:
                         # previous room
@@ -103,9 +105,18 @@ class AdventureGraph:
                         # need an actual room object for this to work...
                         # y = self.rooms[last].get_room_in_direction(neighbor)
 
+                        print("108: ", self.rooms[last][neighbor])
                         path.append(self.rooms[last][neighbor])
                         q.enqueue(path)
                         previous = int(last)
+                        print("112: ", previous)
+            # else:
+            #     # dead-end in wrong direction
+            #     for neighbor in self.rooms[last]:
+            #         path.append(self.rooms[last][neighbor])
+            #         q.enqueue(path)
+            #         previous = int(last)
+
 
 
 # instantiate graph and queue
@@ -114,11 +125,13 @@ adv_graph = AdventureGraph()
 # add starting room
 # q.enqueue(player.current_room)
 previous = None
+opposite = None
 num_rooms = len(world.rooms)
 
 adv_graph.add_room(player.current_room.id)
 
 import pdb
+pdb.set_trace()
 
 while adv_graph.size < num_rooms:
     # do I need this queue ????
@@ -126,26 +139,31 @@ while adv_graph.size < num_rooms:
     
     # pop out a room
     room = player.current_room
-    print("!", room.id)
-    pdb.set_trace()
-    
+    print("room.id: ", room.id)
+
     # if room has been visited previously
     if adv_graph.rooms.get(room.id):
 
+        if previous is not None and opposite is not None:
+            adv_graph.rooms[room.id][opposite] = previous.id
+
         possibilities = []
         for neighbor in adv_graph.rooms[room.id]:
-            # I'm hitting the else below before it checks all
+            # z = room.get_room_in_direction(neighbor)
+            # if z.id == previous.id:
+            #     # link
+            #     adv_graph.rooms[room.id][neighbor] = z.id
+
             if adv_graph.rooms[room.id][neighbor] == '?':
                 possibilities.append(neighbor)
         
-        pdb.set_trace()
         if len(possibilities) > 0:
             # randonly choose and move
             d = random.randint(0, len(possibilities) -1)
-            traversal_path.append(possibilities[d])
+            # traversal_path.append(possibilities[d])
             y = room.get_room_in_direction(possibilities[d])
             # room.connect_rooms(possibilities[d], y)
-            previous = room
+            previous = player.current_room
             player.travel(possibilities[d])
         else:
             # find nearest '?'
@@ -157,13 +175,24 @@ while adv_graph.size < num_rooms:
             for room_id in path:
                 # looks like this will do a double check on current room because
                 # it is passed in and out of bfs
+                print("rooms: ", adv_graph.rooms)
                 for d in directions:
-                    z = room.get_room_in_direction(d)
-                    if z.id == room_id:
-                        # move player, connect rooms
-                        traversal_path.append(d)
-                        previous = player.current_room
-                        player.travel(d)
+                    if room.get_room_in_direction(d):
+                        z = room.get_room_in_direction(d)
+                        if z.id == room_id:
+                            # move player, connect rooms
+                            # traversal_path.append(d)
+                            previous = player.current_room
+                            player.travel(d)
+                            
+                            if d == 'n':
+                                opposite = 's'
+                            if d == 's':
+                                opposite = 'n'
+                            if d == 'e':
+                                opposite = 'w'
+                            if d == 'w':
+                                opposite = 'e'
                 
                 # at final destination
 
@@ -174,6 +203,8 @@ while adv_graph.size < num_rooms:
     else:
         # add to graph
         adv_graph.add_room(room.id)
+        if previous is not None and opposite is not None:
+            adv_graph.rooms[room.id][opposite] = previous.id
         # find all exits
         neighbors = room.get_exits()
 
@@ -196,14 +227,25 @@ while adv_graph.size < num_rooms:
         if len(possibilities) > 0:
             d = random.randint(0, len(possibilities) -1)
             # connect move to path
-            traversal_path.append(possibilities[d])
+            # traversal_path.append(possibilities[d])
             # get room in direction traveling to
             y = room.get_room_in_direction(possibilities[d])
             # assign neighbor in current room before moving
             adv_graph.rooms[room.id][possibilities[d]] = y.id
             # iterate
             previous = room
+            # connect new room to previous room
             player.travel(possibilities[d])
+
+            if possibilities[d] == 'n':
+                opposite = 's'
+            if possibilities[d] == 's':
+                opposite = 'n'
+            if possibilities[d] == 'e':
+                opposite = 'w'
+            if possibilities[d] == 'w':
+                opposite = 'e'
+            
             # q.enqueue(player.current_room)
         else:
             # unexplored but no unexplored neighbors -> dead-end
@@ -215,18 +257,33 @@ while adv_graph.size < num_rooms:
                         
             directions = ['n', 's', 'e', 'w']
             for room_id in path:
+                print("room_id: ", room_id)
+                print(player.current_room.id)
                 # looks like this will do a double check on current room because
-                # it is passed in and out of bfs
+                # it is passed into bfs and checked
+                # import pdb
+                # pdb.set_trace()
                 for d in directions:
-                    import pdb
-                    pdb.set_trace()
+                    print("243 d: ", d)
+                    if room.get_room_in_direction(d):
+                        z = room.get_room_in_direction(d)
+                        if z.id == room_id:
+                            # move player, connect rooms
+                            # traversal_path.append(d)
+                            previous = player.current_room
+                            player.travel(d)
 
-                    z = room.get_room_in_direction(d)
-                    if z.id == room_id:
-                        # move player, connect rooms
-                        traversal_path.append(d)
-                        previous = player.current_room
-                        player.travel(d)
+                            if d == 'n':
+                                opposite = 's'
+                            if d == 's':
+                                opposite = 'n'
+                            if d == 'e':
+                                opposite = 'w'
+                            if d == 'w':
+                                opposite = 'e'
+
+                            # adv_graph.rooms[player.current_room.id][opposite] = previous.id
+
 
 
 # TRAVERSAL TEST
